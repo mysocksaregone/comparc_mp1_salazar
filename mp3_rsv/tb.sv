@@ -1,12 +1,7 @@
 `include "game.sv"
 `timescale 10ns/10ns
 
-// Testbench with two independent parts:
-//   Part 1: game + memory   -> checks seed loading and the Life rules
-//   Part 2: controller + ws2812b -> checks the bit stream sent to the LEDs
-// Run: iverilog -g2012 -o sim tb.sv game.sv controller.sv ws2812b.sv memory.sv
-//      vvp sim
-//      gtkwave wave.vcd
+
 module tb # (
     parameter RED_INIT_FILE = "red_initial.memh",
     parameter BLUE_INIT_FILE = "blue_initial.memh",
@@ -20,6 +15,7 @@ module tb # (
     logic [63:0] next_r, next_g, next_b;
     logic        ready_r, ready_g, ready_b;
 
+    // shortened time between generations specifically for simulation
     game #(.STEP_CYCLES(20), .INIT_FILE(RED_INIT_FILE))   red (.clk(clk), .predator_next(next_b),
                                             .board(board_r), .next_board(next_r), .ready(ready_r));
 
