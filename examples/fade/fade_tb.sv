@@ -11,7 +11,7 @@ module fade_tb;
     top # (
         .PWM_INTERVAL   (PWM_INTERVAL)
     ) u0 (
-        .clk            (clk), 
+        .clk            (clk),
         .LED            (LED)
     );
 
