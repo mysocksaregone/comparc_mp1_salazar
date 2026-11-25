@@ -35,13 +35,28 @@ module sign_extension_unit (
 
             // J-type instructions imm[20|10:1|11|19:12], most significant 20 bits after a 21-bit
             // immediate jump offset
+            // {sign ext (11 copies of inst[31]),
+            //  imm[20]=inst[31], imm[19:12]=inst[19:12],
+            //  imm[11]=inst[20], imm[10:1]=inst[30:21], 0}
             `OP_JAL:
                 o_imm_extended = {{11{i_inst[31]}}, i_inst[31], i_inst[19:12], i_inst[20],
                 i_inst[30:21], 1'b0};
 
-            // B-type instructions 
+            // B-type instructions imm[12|10:5|4:1|11]
+            // remaining bits in between define funct3 and rs2 and rs1 addr
+            // {sign ext, imm[12]=inst[31], imm[11]=inst[7], imm[10:5]=inst[30:25], imm[4:1]=inst[11:8], 0}
             `OP_BRANCH:
-                o_imm_extended = 
+                o_imm_extended = {{19{i_inst[31]}}, i_inst};
+
+            // S-type instructions
+            // {sign ext (20 copies of inst[31]),
+            //  imm[11:5]=inst[31:25], imm[4:0]=inst[11:7]}
+            `OP_STORE:
+                o_imm_extended = {{20{i_inst[31]}}, i_inst[30:25], i_inst[11:7]};
+
+            // I-type instructions
+            `OP_JALR, `OP_LOAD, `OP_ALUI:
+                o_imm_extended = {{20{i_inst[31]}}, i_inst[30:20]};
 
             // R-type instructions, same as default, included for readability
             `OP_ALU:
