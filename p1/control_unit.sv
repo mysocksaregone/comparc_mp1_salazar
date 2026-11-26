@@ -51,7 +51,7 @@ module control_unit(
     output logic [5:0] alu_op,
 
     // indicate branch unit
-    output logic is_branch, // branch, jump, jalr (b,j,i type)
+    output logic branch, // branch, jump, jalr (b,j,i type)
 
     // indicate branch unit condition
     output logic [2:0] branch_opcode,
@@ -145,6 +145,117 @@ module control_unit(
             // restart for any other case
             default: next_state = FETCH1;
         endcase
+    end
+
+    // state-gated signals
+    always_comb begin
+
+        ir_write = 1'b0;
+        pc_write = 1'b0;
+        reg_write = 1'b0;
+        mem_write = 1'b0;
+
+        // latch the instruction only when it's valid (FETCH2)
+        if (state == FETCH2)
+            ir_write = 1'b1;
+
+        // enable pc_write if at end of execute (branch) or end of
+        // memory (store) or end of writeback (all other cases)
+        if ((state == EXECUTE && is_branch) || (state == MEMORY && is_store) ||
+             state == WRITEBACK)
+             pc_write = 1'b1;
+
+        // enable writing to dest reg only for writeback
+        if (state == WRITEBACK && writes_reg)
+            reg_write = 1'b1;
+
+        // memory for store ONLY
+        if (state == MEMORY && is_store)
+            mem_write = 1'b1;
+    end
+
+    // class-based signals
+
+    // ALU operand A
+    always_comb begin
+        // default, 00 = rs1 (R, I, load, store, jalr)
+        alu_src_a = 2'b00;
+
+        // 01 for PC (branch, jal, or auipc)
+        if (is_branch || is_jal || is_auipc)
+            alu_src_a = 2'b01;
+
+        // 10 for zero
+        else if (is_lui)
+            alu_src_a = 2'b10;
+    end
+
+    // ALU operation select
+    always_comb begin
+
+        // default to no operation
+        alu_op = `OP_ALU_NOP;
+
+        if (is_alu || is_alui) begin
+            case (funct3)
+                // add/sub
+                3'b000: alu_op = (is_alu && funct7[5]) ? `OP_ALU_SUB : `OP_ALU_ADD;
+
+                // slli / slli
+                3'b001: alu_op = `OP_ALU_SLL;
+
+                // slt / slti
+                3'b010: alu_op = `OP_ALU_SLT;
+
+                // sltu / sltui
+                3'b011: alu_op = `OP_ALU_SLTU;
+
+                // xor / xori
+                3'b100: alu_op = `OP_ALU_XOR;
+
+                // srl/sra (plus i variants)
+                3'b101: alu_op = funct7[5] ? `OP_ALU_SRA : `OP_ALU_SRL;
+
+                // or/ori
+                3'b110: alu_op = `OP_ALU_OR;
+
+                // and/andi
+                3'b111: alu_op = `OP_ALU_AND;
+
+                default: alu_op = `OP_ALU_NOP;
+            endcase
+        end
+        // don't forget address (load/store), target (branch/jal/jalr),
+        // and lui/auipc use ADD
+        else if (is_load || is_store || is_branch || is_jal || is_jalr ||
+                 is_lui || is_auipc)
+                alu_op = `OP_ALU_ADD;
+    end
+
+    // branch unit controls
+    always_comb begin
+
+        //enabled for branches, jal, and jalr
+        branch = is_branch || is_jal || is_jalr;
+
+        if (is_branch)
+            branch_opcode = funct3;
+        else
+            branch_opcode = `BRANCH_JAL;
+    end
+
+    // register write data select
+    always_comb begin
+        // default: R, I ALU, lui and auipc
+        result_mux = 2'b00;
+
+        // jal and jalr: write the return address of PC+4
+        if (is_jal || is_jalr)
+            result_mux = 2'b01;
+
+        // load: data memory read
+        else if (is_load)
+            result_mux = 2'b10;
     end
 
 endmodule
