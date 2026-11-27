@@ -19,7 +19,7 @@ module decoder (
     output logic [6:0] op_code,
 
     // destination register, bits 11:7
-    output logic [4:0] dest_register,
+    output logic [4:0] dest_reg,
 
     // funct3, bits 14:12
     output logic [2:0] funct3,
@@ -32,7 +32,6 @@ module decoder (
     output logic [6:0] funct7,
 
     // specific class flags
-    // a valid instruction only has one flag
     output logic is_alu, // r-type: add, sub, sll, slt, sltu, xor, srl, sra, or, and
     output logic is_alui, // i-type: addi, slti, sltiu, xori, ori, andi, shifts
     output logic is_load, // i-type: lb, lh, lw, lbu, lhu
@@ -47,7 +46,7 @@ module decoder (
 
     // slice everything up depending on defined structure above
     assign op_code = i_inst[6:0];
-    assign dest_register = i_inst[11:7];
+    assign dest_reg = i_inst[11:7];
     assign funct3 = i_inst[14:12];
     assign rs1 = i_inst[19:15];
     assign rs2 = i_inst[24:20];

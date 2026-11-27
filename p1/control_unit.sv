@@ -16,8 +16,8 @@
 `define BRANCH_JAL 3'b010 // jump and link
 
 module control_unit(
-    input logic i_clk,
-    input logic i_rst, // reset
+    input logic clk,
+    input logic rst, // reset
 
     // class flags from decoder
     input logic is_alu,
@@ -92,10 +92,10 @@ module control_unit(
                         is_lui | is_auipc | is_fence;
 
     // state register advances on each clock edge
-    always_ff @(posedge i_clk) begin
+    always_ff @(posedge clk) begin
 
         // reset
-        if (i_rst)
+        if (rst)
             state <= FETCH1;
         else
             state <= next_state;

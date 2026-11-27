@@ -4,13 +4,13 @@
 module register_file #(
     parameter int MEMORY_SIZE = 1024 // 4 iterations per second
 )(
-    input wire i_clk,
-    input wire i_rst,  // allows us to clear all registers
-    input wire i_we,
+    input wire clk,
+    input wire rst,  // allows us to clear all registers
+    input wire we,
 
     // destination register
-    input wire [$clog2(MEMORY_SIZE)-1:0] i_addr, // number (0-31)
-    input wire [`DATA_WIDTH-1:0] i_rd, // value to write into it
+    input wire [$clog2(`NUM_OF_REGISTER)-1:0] dest_reg_addr, // number (0-31)
+    input wire [`DATA_WIDTH-1:0] dest_reg_data, // value to write into it
 
     // source register numbers
     input wire [$clog2(`NUM_OF_REGISTER)-1:0] i_rs1_addr,
@@ -29,15 +29,15 @@ module register_file #(
             registers[i] = '0;
     end
 
-    // apply register set and reset if i_we
-    always_ff @(posedge i_clk) begin
-        if (i_rst)
+    // apply register set and reset if we
+    always_ff @(posedge clk) begin
+        if (rst)
             for (int i = 0; i < `NUM_OF_REGISTER; i++)
                 registers[i] <= '0;
 
         // remember that x0 will always be 0
-        else if (i_we && i_rd_addr != 0) begin
-            registers[i_rd_addr] <= i_rd;
+        else if (we && dest_reg_addr != 0) begin
+            registers[dest_reg_addr] <= dest_reg_data;
         end
     end
 
